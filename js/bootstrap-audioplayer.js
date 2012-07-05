@@ -8,6 +8,8 @@
 (function () {
   'use strict';
 
+  var AudioPlayer = function () {};
+
   $.fn.audioplayer = function (option) {
     return this.each(function () {
       var $this = $(this);
@@ -22,5 +24,5 @@
 
   };
 
-  $.fn.auidoplayer.constructor = AudioPlayer;
+  $.fn.audioplayer.constructor = AudioPlayer;
 })(window.jQuery);

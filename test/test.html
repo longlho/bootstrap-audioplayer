@@ -2,13 +2,37 @@
 <html>
   <head>
     <link rel='stylesheet/less' type='text/css' href='../less/audioplayer.less'/>
-    <link rel='stylesheet' type='text/css' href='bootstrap/bottstrap.min.css'/>
+    <link rel='stylesheet' type='text/css' href='bootstrap/css/bootstrap.min.css'/>
     <script type='text/javascript' src='http://lesscss.googlecode.com/files/less-1.3.0.min.js'></script>
   </head>
   <body>
 
+    <div class='container'>
+      <div class='row'>
+        <div class='span4 offset4'>
+          <div class='ap'>
+            <div class='cover-art' style='text-align:center'>
+              <audio src='music/blind_willie.mp3' preload autoplay></audio>
+              <img src='img/no-album-art.png' />
+            </div>
+            <p class='track-info'>
+            <span class="song-progress">
+              <input type="range" min="0" max="100" value="0" data-highlight='true' />
+            </span>
+            <span class="timeleft"></span>
+            </p>
+            <div class='playback btn-group'>
+              <button class='playback-prev btn' ><i class='icon-step-backward'></i></button>
+              <button class='playback-play btn' ><i class='icon-pause'></i></button>
+              <button class='playback-next btn' ><i class='icon-step-forward'></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script type='text/javascript' src='http://code.jquery.com/jquery-1.7.2.min.js'></script>
-    <script type='text/javascript' src='bootstrap/bootstrap.min.js'></script>
+    <script type='text/javascript' src='bootstrap/js/bootstrap.min.js'></script>
     <script type='text/javascript' src='../js/bootstrap-audioplayer.js'></script>
   </body>
 </html>
