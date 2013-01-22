@@ -13,41 +13,39 @@
   // $audio is the `jQuery` wrapper for the `<audio>` element
   var AudioModel = function ($audio) {
     var self = this;
-    this.$audio = $audio;
+    $audio = $audio;
 
-    var _reset = function (index, filename) {
-      if (!filename) { return; }
-      this.$audio.data('current', parseInt(index, 10));
-      this.$audio.trigger('change:index', $audio.data('current'));
-      this.$audio.attr('src', filename);
-      this.$audio.trigger('change:src', filename);
+    var _reset = function (index, song) {
+      if (!song) { return; }
+      $audio.data('current', parseInt(index, 10));
+      $audio.data('title', song.title);
+      $audio.attr('src', song.url);
+      $audio.trigger('change:song', [index, song]);
       this.setState($audio.data('state') || 'play');
     };
 
-    this.$audio.on('ended', function () {
+    $audio.on('ended', function () {
       self.fetch(self.getCurrent() + 1);
-    });
+    }).data('state', 'pause');
 
     this.setState = function (state) {
-      switch (state) {
-        case 'play':
-          this.getDOMAudio().play();
-          break;
-        case 'pause':
-          this.getDOMAudio().pause();
-          break;
+      if (state === 'pause') {
+        this.getDOMAudio().pause();
+      } else {
+        this.getDOMAudio().play();
       }
-      this.$audio.data('state', state);
-      this.$audio.trigger('change:state', state);
+      
+      $audio.data('state', state);
+      $audio.trigger('change:state', state);
     };
     this.getState = function () {
-      return this.$audio.data('state');
+      return $audio.data('state');
     };
     this.getCurrent = function () {
-      return this.$audio.data('current');
+      return $audio.data('current');
     };
     this.fetch = function (index, song) {
-      _reset.call(self, index, song.url);
+      _reset.call(this, index, song);
       //Do a AJAX to get arraybuffer here.
     };
     this.getDOMAudio = function () {
@@ -61,9 +59,9 @@
     this.options = opts;
     this.$el = $(el);
     this.dom = {
-      $next: this.$el.find('.playback-next'),
-      $prev: this.$el.find('.playback-prev'),
-      $play: this.$el.find('.playback-play'),
+      $next: this.$el.find('.playback .next'),
+      $prev: this.$el.find('.playback .prev'),
+      $play: this.$el.find('.playback .play'),
       $info: this.$el.find('.track-info'),
       $progress: this.$el.find('.track-progress'),
       $loader: this.$el.find('.loader'),
@@ -75,19 +73,39 @@
     };
     this.model = new AudioModel(this.dom.$audio);
     this.dom.$audio
-      .on('change:src', function (ev, filename) {
-        var filenameArr = filename.split('/')
-          , songName = filenameArr[filenameArr.length - 1];
-        self.dom.$title.text(songName);
+      .on('change:song', function (ev, index, song) {
+        self.dom.$title.text(song.title);
       })
       .on('change:state', function (ev, state) {
-        return self.dom.$play.text(state === 'play' ? "||" : 'Play');
+        return self.dom.$play.html('<i class="icon-' + (state === 'play' ? 'pause' : 'play') + '"></i>');
+      })
+      .on('progress', function () {
+        var buffered = this.buffered.end(0);
+        if (!buffered) return;
+        var loaded = parseInt(((buffered / this.duration) * 100) + 3, 10);
+        self.dom.$loader.css('width', loaded + '%');
+      })
+      .on('timeupdate', function () {
+        var rem = parseInt(this.duration - this.currentTime, 10),
+        pos = Math.floor((this.currentTime / this.duration) * 100),
+        mins = Math.floor(rem/60, 10),
+        secs = rem - mins * 60;
+
+        self.dom.$timer.text('-' + mins + ':' + (secs > 9 ? secs : '0' + secs));
+        // if (!manualSeek) { options.handle.css({left: pos + '%'}); }
+        // if (!loaded) {
+        //   loaded = true;
+        // }
       });
 
     this.current = 0;
     this.dom.$next.click($.proxy(this.next, this));
     this.dom.$prev.click($.proxy(this.prev, this));
     this.dom.$play.click($.proxy(this.playToggle, this));
+    this.model.fetch(this.current, this.options.songs[this.current]);
+
+    opts.autoplay && this.play();
+
   };
 
   AudioPlayer.prototype = {
@@ -98,7 +116,7 @@
       this.$el.trigger(e);
       if (e.isDefaultPrevented()) return;
       if (this.current === this.options.songs.length - 1) {
-        this.current = 0;
+        return;
       } else {
         this.current++;
       }
@@ -131,10 +149,10 @@
       this.$el.trigger(e);
     },
     play: function (e) {
-      this.model.getState() === 'play' && this.playToggle();
+      this.model.getState() === 'pause' && this.playToggle();
     },
     pause: function (e) {
-      this.model.getState() === 'pause' && this.playToggle();
+      this.model.getState() === 'play' && this.playToggle();
     }
   };
 
@@ -156,7 +174,8 @@
   };
 
   $.fn.audioplayer.defaults = {
-    autoplay: true
+    autoplay: true,
+    songs: []
   };
 
   $.fn.audioplayer.Constructor = AudioPlayer;
