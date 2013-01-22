@@ -1,4 +1,5 @@
-/*jshint laxcomma:true expr:true*/
+/*jshint laxcomma:true expr:true */
+/*global webkitAudioContext:true AudioContext:true */
 // Bootstrap Audio Player
 // -----
 // v1.0.0
@@ -12,16 +13,49 @@
   // but I don't wanna bring Backbone in since this POC is simple.
   // $audio is the `jQuery` wrapper for the `<audio>` element
   var AudioModel = function ($audio) {
-    var self = this;
-    $audio = $audio;
+    var self = this
+      , source
+      , context;
 
+    if ('AudioContext' in window) {
+      context = new AudioContext();
+    } else if ('webkitAudioContext' in window) {
+      context = new webkitAudioContext();
+    }
+    
     var _reset = function (index, song) {
       if (!song) { return; }
       $audio.data('current', parseInt(index, 10));
       $audio.data('title', song.title);
-      $audio.attr('src', song.url);
-      $audio.trigger('change:song', [index, song]);
-      this.setState($audio.data('state') || 'play');
+      //No webkitAudioContext, no fun stuff
+      if (!context) {
+        $audio.attr('src', song.url);
+        $audio.trigger('change:song', [index, song]);
+        this.setState($audio.data('state') || 'play');
+        return;
+      }
+      //Fun stuff is here
+      // $.ajax({
+      //   url: song.url,
+      //   datatype: 'arraybuffer',
+      //   success: function (data) {
+          
+      //   }
+      // });
+      var request = new XMLHttpRequest();
+      request.open('GET', song.url, true);
+      request.responseType = 'arraybuffer';
+
+      // Decode asynchronously
+      request.onload = function() {
+        context.decodeAudioData(request.response, function(buffer) {
+            source = context.createBufferSource();
+            source.buffer = buffer;
+            source.connect(context.destination);
+            source.noteOn(0);
+          });
+      };
+      request.send();
     };
 
     $audio.on('ended', function () {
@@ -50,6 +84,9 @@
     };
     this.getDOMAudio = function () {
       return $audio.get(0);
+    };
+    this.getSource = function () {
+      return source;
     };
   };
 
