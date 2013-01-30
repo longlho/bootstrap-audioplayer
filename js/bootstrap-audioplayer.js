@@ -59,7 +59,7 @@
 
     function drawSpectrum() {
       if (!analyzer) { return; }
-      var canvas = $('canvas')[0];
+      var canvas = $('#visualizer')[0];
       var ctx = canvas.getContext('2d');
       var width = canvas.width;
       var height = canvas.height;
